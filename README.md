@@ -6,6 +6,8 @@
 >
 > 🛡️ 合规声明：演示数据由脚本随机生成（固定随机种子），100% 虚构，不含任何真实数据。
 
+🔗 **在线演示**：https://supplier-contract-console-bezpfmbjpmkxkux98u4xpx.streamlit.app/
+
 ## ✨ 核心亮点
 
 | 机制 | 一句话说明 | 演示入口 |
@@ -80,7 +82,8 @@ streamlit run app.py                # 启动，浏览器自动打开
 1. 将本仓库推送到 GitHub（公开仓库）：[github.com/HaitangCui/supplier-contract-console](https://github.com/HaitangCui/supplier-contract-console)
 2. 打开 [streamlit.io/cloud](https://streamlit.io/cloud)，用 GitHub 账号登录
 3. 「New app」→ 搜索选择本仓库，Branch 填 `main`，Main file path 填 `app.py` → Deploy
-4. 部署完成后即可获得公开演示链接
+4. 部署完成后进入 App Settings → Sharing，**设为 Public**（否则他人访问会看到登录墙）
+5. 获得公开演示链接
 
 ## 📁 目录结构
 
