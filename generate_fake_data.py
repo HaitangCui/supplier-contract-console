@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Supplier Contract Console · 假数据生成脚本
-生成 100% 虚构的供应链合约数据（供应商 80 家 / 合约 1,200 条 / 年度 2,600+ / 明细若干）。
+生成 100% 虚构的供应链合约数据（供应商 80 家 / 合约 1,200 条 / 年度 2,600+ / 明细若干 / 状态流转事件 230+）。
 random.seed 固定，可重复生成。不含任何真实企业数据。
 """
 import random
@@ -121,13 +121,52 @@ cur.executemany(
     "INSERT INTO split_details_xol (xol_detail_id, contract_year_id, sku_category, "
     "volume_threshold, rebate_rate, rebate_cap, note) VALUES (?,?,?,?,?,?,?)", xol_details)
 
+# ---- 供应商状态流转事件（月报转化漏斗的数据源）----
+# 由每家供应商的 status 与 created_at 派生（而非独立随机），与供应商表状态分布严格一致：
+#   合作中 68 家 → 建档 → 转考察 → 转合作；考察期 9 家 → 建档 → 转考察（在考察中）；
+#   已终止 3 家 → 建档 → 转考察 → 转合作 → 终止合作
+# 使用独立 Random 实例，不消耗主种子序列 → 前面 5 张表的生成结果不受影响
+rng = random.Random(20260915)
+today = date(2026, 9, 5)  # 与 d() 的日期锚点一致
+
+def next_date(after_iso, min_gap, max_gap):
+    """在 after 之后 min_gap~max_gap 天内取一个日期，不超过今天（保证事件日期不落在未来）"""
+    after = date.fromisoformat(after_iso)
+    avail = (today - after).days
+    if avail <= 0:
+        return after.isoformat()
+    return (after + timedelta(days=min(rng.randint(min_gap, max_gap), avail))).isoformat()
+
+events = []
+ev_seq = 0
+for sid, _, _, _, _, _, status, created_at in suppliers:
+    ev_seq += 1
+    events.append((f"EV{ev_seq:05d}", sid, "建档", created_at, None))
+    t1 = next_date(created_at, 15, 60)
+    ev_seq += 1
+    events.append((f"EV{ev_seq:05d}", sid, "转考察", t1, None))
+    if status == "考察期":
+        continue  # 仍在考察中，无后续事件
+    t2 = next_date(t1, 60, 240)
+    ev_seq += 1
+    events.append((f"EV{ev_seq:05d}", sid, "转合作", t2, None))
+    if status == "已终止":
+        ev_seq += 1
+        events.append((f"EV{ev_seq:05d}", sid, "终止合作", next_date(t2, 30, 180), "合作解除，归档"))
+
+cur.executemany(
+    "INSERT INTO supplier_events (event_id, supplier_id, event_type, event_date, note) "
+    "VALUES (?,?,?,?,?)", events)
+
 conn.commit()
 
 # 汇总报告（输出到文件，避免控制台乱码）
 report = []
-for t in ["suppliers", "contracts", "contract_years", "split_details_pr", "split_details_xol"]:
+for t in ["suppliers", "contracts", "contract_years", "split_details_pr", "split_details_xol", "supplier_events"]:
     cur.execute(f"SELECT COUNT(*) FROM {t}")
     report.append(f"{t}: {cur.fetchone()[0]}")
+cur.execute("SELECT event_type, COUNT(*) FROM supplier_events GROUP BY event_type ORDER BY event_type")
+report.append("supplier_events by type: " + ", ".join(f"{t}={c}" for t, c in cur.fetchall()))
 cur.execute("SELECT COUNT(*) FROM suppliers WHERE contact_phone IS NULL")
 report.append(f"suppliers with NULL phone (演示四种空): {cur.fetchone()[0]}")
 cur.execute("SELECT COUNT(*) FROM contract_years WHERE is_supplementary=1")

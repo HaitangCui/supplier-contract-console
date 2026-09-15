@@ -47,6 +47,7 @@ REPORT_CSS = """
   table.data-table td { padding: 7px 10px; border: 1px solid #E5E7EB; }
   table.data-table tr:nth-child(even) { background: #FAFBFC; }
   .narrative { background: #EFF6FF; border-radius: 8px; padding: 16px 20px; font-size: 14px; }
+  .funnel-note { font-size: 12px; color: #6B7280; margin-top: 8px; }
   footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid #E5E7EB;
            font-size: 12px; color: #9CA3AF; text-align: center; }
 </style>
@@ -61,6 +62,16 @@ def _fig_bar(df, x, y, color="#2563EB"):
 def _fig_pie(df, labels, values):
     fig = go.Figure(go.Pie(labels=df[labels], values=df[values], hole=0.35))
     return _style(fig)
+
+
+def _fig_funnel(stages, values):
+    """供应商引入转化漏斗（进入考察 → 转合作 → 留存合作中）"""
+    fig = go.Figure(go.Funnel(
+        y=stages, x=values, textinfo="value+percent initial",
+        marker={"color": ["#2563EB", "#60A5FA", "#93C5FD"]},
+    ))
+    fig.update_layout(template="plotly_white", margin=dict(t=30, b=30, l=140, r=60), height=320)
+    return fig
 
 
 def _style(fig):
@@ -116,7 +127,7 @@ def _narrative(api_key, stats):
 
 {json.dumps(_jsonable(stats), ensure_ascii=False)}
 
-请写一段 150-200 字的「月度概览」：先给总体结论，再点出 2-3 个值得关注的点（区域/品类/年度对比/数据质量），最后一句给出建议。
+请写一段 150-200 字的「月度概览」：先给总体结论，再点出 2-3 个值得关注的点（区域/品类/年度对比/数据质量/引入转化），最后一句给出建议。
 硬性要求：
 1. 所有数字必须来自上面 JSON，禁止编造或估算
 2. 简体中文，直接输出正文，不用 Markdown 标题和列表符号"""
@@ -151,6 +162,17 @@ def monthly_report_html(api_key=None):
     category_df = run_sql("SELECT category, COUNT(*) AS cnt FROM suppliers GROUP BY category ORDER BY cnt DESC LIMIT 10")
     year_df = run_sql("SELECT procurement_year, COUNT(*) AS cnt FROM contract_years GROUP BY procurement_year ORDER BY procurement_year")
 
+    # ---- 供应商引入转化漏斗（supplier_events 状态流转事件表）----
+    funnel_map = {r["event_type"]: r["cnt"] for r in run_sql(
+        "SELECT event_type, COUNT(*) AS cnt FROM supplier_events GROUP BY event_type"
+    ).to_dict("records")}
+    n_entered = funnel_map.get("转考察", 0)   # 进入考察
+    n_joined = funnel_map.get("转合作", 0)    # 转为合作
+    n_lost = funnel_map.get("终止合作", 0)    # 合作后流失
+    n_active = status_df.loc[status_df["status"] == "合作中", "cnt"].iloc[0]  # 当前留存
+    conv_rate = n_joined / n_entered          # 考察 → 转合作 转化率
+    loss_rate = n_lost / n_joined             # 转合作 → 流失 流失率
+
     # ---- 表格数据 ----
     empty_df = run_sql(
         "SELECT supplier_id AS sid, supplier_name AS sname, region, category "
@@ -176,6 +198,8 @@ def monthly_report_html(api_key=None):
         "条款明细": {"基础价格条款": n_pr, "阶梯返利条款": n_xol},
         "数据质量": {"联系电话为空的供应商数": n_empty_phone},
         "基础价格条款平均折扣率": avg_discount,
+        "供应商引入转化": {"进入考察": n_entered, "转合作": n_joined, "终止合作": n_lost,
+                          "考察转合作率": round(conv_rate, 4), "合作流失率": round(loss_rate, 4)},
         "区域分布Top3": region_df.head(3).to_dict("records"),
         "品类分布Top3": category_df.head(3).to_dict("records"),
         "各采购年度合约年度数": year_df.to_dict("records"),
@@ -188,6 +212,8 @@ def monthly_report_html(api_key=None):
         ("供货合约", n_contracts, f"生效中 {active_contracts}"),
         ("合约年度", n_years, "含补充协议"),
         ("条款明细", n_pr + n_xol, f"价格条款 {n_pr} · 返利条款 {n_xol}"),
+        ("考察转合作率", f"{conv_rate * 100:.1f}%", f"进入考察 {n_entered} 家 · 转合作 {n_joined} 家"),
+        ("合作流失率", f"{loss_rate * 100:.1f}%", f"终止合作 {n_lost} 家"),
         ("平均折扣率", f"{avg_discount * 100:.1f}%", "基础价格条款均值"),
         ("空电话供应商", n_empty_phone, "数据质量待补全"),
     ]
@@ -207,11 +233,14 @@ def monthly_report_html(api_key=None):
   <div class="chart-card"><h3>各采购年度合约年度数</h3>{_fig_html(_fig_bar(year_df, "procurement_year", "cnt", "#52C41A"))}</div>
   <div class="chart-card"><h3>供应商状态分布</h3>{_fig_html(_fig_pie(status_df, "status", "cnt"))}</div>
 </div>
-<h2>三、阶梯返利条款 Top 10 供应商</h2>
+<h2>三、供应商引入转化漏斗</h2>
+<div class="chart-card"><h3>进入考察 → 转合作 → 留存合作中</h3>{_fig_html(_fig_funnel(["进入考察", "转合作", "留存合作中"], [n_entered, n_joined, n_active]))}</div>
+<p class="funnel-note">考察转合作率 {conv_rate * 100:.1f}%（{n_joined}/{n_entered}）；合作流失率 {loss_rate * 100:.1f}%（{n_lost}/{n_joined}）。另有 {n_entered - n_joined} 家仍在考察期。数据来源：供应商状态流转事件表（supplier_events）。</p>
+<h2>四、阶梯返利条款 Top 10 供应商</h2>
 {rebate_df.to_html(index=False, classes="data-table")}
-<h2>四、数据质量：联系电话为空（Top 10）</h2>
+<h2>五、数据质量：联系电话为空（Top 10）</h2>
 {empty_df.to_html(index=False, classes="data-table")}
-<h2>五、月度概览（AI 分析）</h2>
+<h2>六、月度概览（AI 分析）</h2>
 <div class="narrative">{_md(narrative)}</div>
 """
     footer = ("本报告由 AI Supplier Contract Assistant 自动生成（SQL 实时取数 + AI 撰写分析文字） ｜ "

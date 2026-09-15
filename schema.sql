@@ -1,5 +1,5 @@
 -- Supplier Contract Console · 供货合约管理台
--- SQLite schema —— 5 张核心表，对应「供应商 → 供货合约 → 合约年度 → 分账/返利明细」三层关系模型
+-- SQLite schema —— 5 张核心合约表 + 1 张供应商状态流转表，对应「供应商 → 供货合约 → 合约年度 → 分账/返利明细」三层关系模型
 -- 每张表都带 version（乐观锁）与 updated_at（最后修改时间）
 
 -- 1. 供应商
@@ -74,3 +74,16 @@ CREATE INDEX idx_contracts_supplier ON contracts(supplier_id);
 CREATE INDEX idx_years_contract ON contract_years(contract_id);
 CREATE INDEX idx_pr_year ON split_details_pr(contract_year_id);
 CREATE INDEX idx_xol_year ON split_details_xol(contract_year_id);
+
+-- 6. 供应商状态流转事件（供应商生命周期：建档 → 转考察 → 转合作/终止合作；月报转化漏斗的数据源）
+CREATE TABLE supplier_events (
+    event_id        TEXT PRIMARY KEY,       -- 如 EV00001
+    supplier_id     TEXT NOT NULL REFERENCES suppliers(supplier_id),
+    event_type      TEXT NOT NULL,          -- 建档/转考察/转合作/终止合作
+    event_date      TEXT NOT NULL,          -- 事件发生日期
+    note            TEXT,                   -- 备注（可空）
+    version         INTEGER NOT NULL DEFAULT 1,
+    updated_at      TEXT
+);
+
+CREATE INDEX idx_events_supplier ON supplier_events(supplier_id);

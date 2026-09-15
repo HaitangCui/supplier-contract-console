@@ -22,7 +22,7 @@ MODEL = "deepseek-chat"
 MAX_TOOL_ROUNDS = 8
 MAX_ROWS = 200
 
-ALLOWED_TABLES = {"suppliers", "contracts", "contract_years", "split_details_pr", "split_details_xol"}
+ALLOWED_TABLES = {"suppliers", "contracts", "contract_years", "split_details_pr", "split_details_xol", "supplier_events"}
 FORBIDDEN_KEYWORDS = (
     "insert", "update", "delete", "drop", "alter", "create", "replace",
     "attach", "detach", "pragma", "vacuum", "transaction", "grant", "revoke",
@@ -33,7 +33,7 @@ with open(SCHEMA_PATH, encoding="utf-8") as f:
 
 SYSTEM_PROMPT = f"""你是「供应商合约数据助手」，服务供应链采购团队，回答关于供货合约数据的问题。
 
-数据在 SQLite 数据库中（只读），5 张表的关系模型如下：
+数据在 SQLite 数据库中（只读），6 张表的关系模型如下：
 {SCHEMA_TEXT}
 
 规则：

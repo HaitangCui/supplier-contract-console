@@ -25,12 +25,19 @@ def test_qa_export():
 
 def test_monthly_report():
     html = monthly_report_html(get_api_key())
-    for kw in ["供应商月度概况报告", "月度概览", "plotly", "供应商总数", "区域分布", "返利条款", "数据质量"]:
+    for kw in ["供应商月度概况报告", "月度概览", "plotly", "供应商总数", "区域分布", "返利条款", "数据质量",
+               "供应商引入转化漏斗", "考察转合作率", "合作流失率"]:
         assert kw in html, f"月报缺少内容：{kw}"
     # 数字必须来自真实数据库：与直查结果交叉验证
     total = run_sql("SELECT COUNT(*) FROM suppliers").iloc[0, 0]
     assert str(total) in html, f"报告中找不到供应商总数 {total}（疑似编造）"
-    print(f"Monthly report OK ✓ （数据库中供应商总数 {total} 已出现在报告中）")
+    # 漏斗数字与 supplier_events 流转表直查交叉验证
+    entered = run_sql("SELECT COUNT(*) FROM supplier_events WHERE event_type = '转考察'").iloc[0, 0]
+    joined = run_sql("SELECT COUNT(*) FROM supplier_events WHERE event_type = '转合作'").iloc[0, 0]
+    lost = run_sql("SELECT COUNT(*) FROM supplier_events WHERE event_type = '终止合作'").iloc[0, 0]
+    assert f"{joined / entered * 100:.1f}%" in html, "报告中考察转合作率与直查结果不一致"
+    assert f"{lost / joined * 100:.1f}%" in html, "报告中合作流失率与直查结果不一致"
+    print(f"Monthly report OK ✓ （供应商总数 {total}、漏斗 {entered}→{joined}→{joined - lost} 均与数据库一致）")
 
 
 if __name__ == "__main__":

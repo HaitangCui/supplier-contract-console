@@ -14,7 +14,7 @@
 |---|---|---|---|
 | v1 | 数据维护工具：查询/编辑/新建/删除 + 乐观锁、事务回滚、级联删除等机制（`release/v1` 分支冻结） | `app.py` | [v1 演示](https://supplier-contract-console-bezpfmbjpmkxkux98u4xpx.streamlit.app/) |
 | v2 | AI Agent 探索版：自然语言查询 + 分析 + 图表（只读，写操作保留在 v1 人工执行）（`release/v2` 分支冻结） | `agent_app.py` | [v2 演示](https://supplier-contract-console-v2-offer4mian8fanglai.streamlit.app/) |
-| v3 | 报告导出版：v2 问答能力 + 一键生成「供应商月度概况报告」/ 导出任意一轮问答（HTML 单文件，浏览器打印 PDF） | `report_app.py` | [v3 演示](https://supplier-contract-console-v3-offer4mian8fanglai.streamlit.app/) |
+| v3 | 报告导出版：v2 问答能力 + 一键生成「供应商月度概况报告」（含供应商引入转化漏斗）/ 导出任意一轮问答（HTML 单文件，浏览器打印 PDF） | `report_app.py` | [v3 演示](https://supplier-contract-console-v3-offer4mian8fanglai.streamlit.app/) |
 
 ## ✨ 核心亮点
 
@@ -31,13 +31,14 @@
 
 ```
 suppliers 供应商（80 家虚构示例）
+  ├─ supplier_events 供应商状态流转事件（234 条：建档 → 转考察 → 转合作/终止，月报转化漏斗的数据源）
   └─ contracts 供货合约（1,200 条）
        └─ contract_years 合约年度（采购年度 + 补充协议标记）
             ├─ split_details_pr  基础价格条款（折扣率/结算周期）
             └─ split_details_xol 阶梯返利条款（采购量超额返点）
 ```
 
-5 张表均带 `version`（乐观锁）与 `updated_at` 字段；编号（S0001、C0001…）由系统生成，用户不可编辑。
+6 张表均带 `version`（乐观锁）与 `updated_at` 字段；编号（S0001、C0001…）由系统生成，用户不可编辑。
 
 ## 🚀 快速开始
 
@@ -110,7 +111,7 @@ python test_report.py           # v3 报告生成冒烟测试
 supplier-contract-console/
 ├── app.py                  # v1 Streamlit 应用（总览/查询/编辑/新建/删除 5 模块）
 ├── db.py                   # 数据访问层（乐观锁/事务/级联/查询）
-├── schema.sql              # 5 表 schema（含 version 乐观锁字段）
+├── schema.sql              # 6 表 schema（含 version 乐观锁字段 + 供应商状态流转表）
 ├── generate_fake_data.py   # 虚构数据生成脚本（随机种子固定）
 ├── agent.py                # v2/v3 Agent 核心（SQL 只读四层防护 + 画图工具 + 只读查询函数）
 ├── agent_app.py            # v2 入口（AI 问答：聊天 + 图表 + 限流 + 自检）
