@@ -62,7 +62,8 @@ with st.sidebar:
     st.subheader("💡 试试这些问题")
     for i, ex in enumerate(EXAMPLES):
         if st.button(ex, key=f"ex{i}", width="stretch"):
-            st.session_state.messages.append({"role": "user", "content": ex})
+            # 与输入框共用同一条提问通道：中转给 st.chat_input 处理，保证触发 Agent
+            st.session_state.pending = ex
             st.rerun()
 
 # 渲染历史消息
@@ -75,6 +76,8 @@ for m in st.session_state.messages:
             st.plotly_chart(_build_fig(m["chart"], m["df"]), width="stretch")
 
 prompt = st.chat_input("用中文问我，比如「华东地区有哪些供应商？」")
+if not prompt:
+    prompt = st.session_state.pop("pending", None)
 if prompt:
     st.session_state.messages.append({"role": "user", "content": prompt})
     if st.session_state.llm_calls >= MAX_DAILY:
