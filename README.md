@@ -13,7 +13,8 @@
 | 版本 | 内容 | 入口文件 | 在线演示 |
 |---|---|---|---|
 | v1 | 数据维护工具：查询/编辑/新建/删除 + 乐观锁、事务回滚、级联删除等机制（`release/v1` 分支冻结） | `app.py` | [v1 演示](https://supplier-contract-console-bezpfmbjpmkxkux98u4xpx.streamlit.app/) |
-| v2 | AI Agent 探索版：自然语言查询 + 分析 + 图表（只读，写操作保留在 v1 人工执行） | `agent_app.py` | [v2 演示](https://supplier-contract-console-v2-offer4mian8fanglai.streamlit.app/) |
+| v2 | AI Agent 探索版：自然语言查询 + 分析 + 图表（只读，写操作保留在 v1 人工执行）（`release/v2` 分支冻结） | `agent_app.py` | [v2 演示](https://supplier-contract-console-v2-offer4mian8fanglai.streamlit.app/) |
+| v3 | 报告导出版：v2 问答能力 + 一键生成「供应商月度概况报告」/ 导出任意一轮问答（HTML 单文件，浏览器打印 PDF） | `report_app.py` | 部署后补充 |
 
 ## ✨ 核心亮点
 
@@ -47,6 +48,17 @@ streamlit run app.py                # 启动，浏览器自动打开
 ```
 
 可选：`python test_smoke.py` 运行自动化冒烟测试（AppTest，不污染演示数据）。
+
+v2/v3 本地运行：
+
+```bash
+streamlit run agent_app.py      # v2 · AI Agent 问答
+streamlit run report_app.py     # v3 · 问答 + 报告导出
+python test_agent.py            # v2 golden questions 冒烟测试
+python test_report.py           # v3 报告生成冒烟测试
+```
+
+> 同一仓库可部署多个 Streamlit app：每个 app 对应一个分支 + 入口文件，互不影响（v1/v2/v3 三个版本各自独立链接）。
 
 ## 🛡 核心机制详解
 
@@ -96,11 +108,17 @@ streamlit run app.py                # 启动，浏览器自动打开
 
 ```
 supplier-contract-console/
-├── app.py                  # Streamlit 应用（总览/查询/编辑/新建/删除 5 模块）
+├── app.py                  # v1 Streamlit 应用（总览/查询/编辑/新建/删除 5 模块）
 ├── db.py                   # 数据访问层（乐观锁/事务/级联/查询）
 ├── schema.sql              # 5 表 schema（含 version 乐观锁字段）
 ├── generate_fake_data.py   # 虚构数据生成脚本（随机种子固定）
-├── test_smoke.py           # AppTest 冒烟测试
+├── agent.py                # v2/v3 Agent 核心（SQL 只读四层防护 + 画图工具 + 只读查询函数）
+├── agent_app.py            # v2 入口（AI 问答：聊天 + 图表 + 限流 + 自检）
+├── report_gen.py           # v3 报告生成（模板月报 + 问答导出 → 单文件 HTML）
+├── report_app.py           # v3 入口（v2 问答 + 一键报告导出）
+├── test_smoke.py           # v1 AppTest 冒烟测试
+├── test_agent.py           # v2 golden questions 冒烟测试
+├── test_report.py          # v3 报告生成冒烟测试（数字与直查数据库交叉验证）
 ├── console.db              # 演示数据库（脚本生成，随仓库分发）
 └── requirements.txt
 ```

@@ -124,6 +124,23 @@ def _validate_select(sql):
     return None
 
 
+def run_sql(sql):
+    """执行一条只读 SELECT 并返回 DataFrame（报告生成等场景复用；防护与 sql_query 工具相同）"""
+    err = _validate_select(sql)
+    if err:
+        raise ValueError(err)
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+    try:
+        cur = conn.execute(sql)
+        cols = [d[0] for d in cur.description] if cur.description else []
+        rows = cur.fetchmany(MAX_ROWS + 1)
+        if cols:
+            return pd.DataFrame(rows[:MAX_ROWS], columns=cols)
+        return pd.DataFrame()
+    finally:
+        conn.close()
+
+
 def _execute_tool(name, args, state):
     if name == "sql_query":
         sql = str(args.get("sql", ""))
