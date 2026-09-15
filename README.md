@@ -14,7 +14,7 @@
 |---|---|---|---|
 | v1 | 数据维护工具：查询/编辑/新建/删除 + 乐观锁、事务回滚、级联删除等机制（`release/v1` 分支冻结） | `app.py` | [v1 演示](https://supplier-contract-console-bezpfmbjpmkxkux98u4xpx.streamlit.app/) |
 | v2 | AI Agent 探索版：自然语言查询 + 分析 + 图表（只读，写操作保留在 v1 人工执行）（`release/v2` 分支冻结） | `agent_app.py` | [v2 演示](https://supplier-contract-console-v2-offer4mian8fanglai.streamlit.app/) |
-| v3 | 报告导出版：v2 问答能力 + 一键生成「供应商月度概况报告」/ 导出任意一轮问答（HTML 单文件，浏览器打印 PDF） | `report_app.py` | 部署后补充 |
+| v3 | 报告导出版：v2 问答能力 + 一键生成「供应商月度概况报告」/ 导出任意一轮问答（HTML 单文件，浏览器打印 PDF） | `report_app.py` | [v3 演示](https://supplier-contract-console-v3-offer4mian8fanglai.streamlit.app/) |
 
 ## ✨ 核心亮点
 
