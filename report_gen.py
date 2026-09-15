@@ -34,7 +34,8 @@ REPORT_CSS = """
   header h1 { font-size: 22px; color: #111827; }
   header .meta { margin-top: 6px; font-size: 13px; color: #6B7280; }
   h2 { font-size: 16px; margin: 28px 0 12px; padding-left: 8px; border-left: 4px solid #2563EB; }
-  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 16px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
   .kpi { background: #F8FAFC; border: 1px solid #E5E7EB; border-radius: 8px; padding: 14px 16px; }
   .kpi .name { font-size: 13px; color: #6B7280; }
   .kpi .value { font-size: 26px; font-weight: 700; color: #111827; margin-top: 2px; }
@@ -130,7 +131,8 @@ def _narrative(api_key, stats):
 请写一段 150-200 字的「月度概览」：先给总体结论，再点出 2-3 个值得关注的点（区域/品类/年度对比/数据质量/引入转化），最后一句给出建议。
 硬性要求：
 1. 所有数字必须来自上面 JSON，禁止编造或估算
-2. 简体中文，直接输出正文，不用 Markdown 标题和列表符号"""
+2. 比率类指标已换算为百分数（如 88.8 即 88.8%），表述时按百分数引用
+3. 简体中文，直接输出正文，不用 Markdown 标题和列表符号"""
     client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com", timeout=60, max_retries=0)
     resp = client.chat.completions.create(
         model=MODEL, messages=[{"role": "user", "content": prompt}], temperature=0.3
@@ -197,9 +199,10 @@ def monthly_report_html(api_key=None):
         "合约年度总数": n_years,
         "条款明细": {"基础价格条款": n_pr, "阶梯返利条款": n_xol},
         "数据质量": {"联系电话为空的供应商数": n_empty_phone},
-        "基础价格条款平均折扣率": avg_discount,
+        "基础价格条款平均折扣率(%)": round(avg_discount * 100, 1),
         "供应商引入转化": {"进入考察": n_entered, "转合作": n_joined, "终止合作": n_lost,
-                          "考察转合作率": round(conv_rate, 4), "合作流失率": round(loss_rate, 4)},
+                          "考察转合作率(%)": round(conv_rate * 100, 1),
+                          "合作流失率(%)": round(loss_rate * 100, 1)},
         "区域分布Top3": region_df.head(3).to_dict("records"),
         "品类分布Top3": category_df.head(3).to_dict("records"),
         "各采购年度合约年度数": year_df.to_dict("records"),
