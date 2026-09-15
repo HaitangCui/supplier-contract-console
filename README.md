@@ -8,6 +8,13 @@
 
 🔗 **在线演示**：https://supplier-contract-console-bezpfmbjpmkxkux98u4xpx.streamlit.app/
 
+## 🧭 版本演进
+
+| 版本 | 内容 | 入口文件 | 在线演示 |
+|---|---|---|---|
+| v1 | 数据维护工具：查询/编辑/新建/删除 + 乐观锁、事务回滚、级联删除等机制（`release/v1` 分支冻结） | `app.py` | [v1 演示](https://supplier-contract-console-bezpfmbjpmkxkux98u4xpx.streamlit.app/) |
+| v2 | AI Agent 探索版：自然语言查询 + 分析 + 图表（只读，写操作保留在 v1 人工执行） | `agent_app.py` | 部署后补充 |
+
 ## ✨ 核心亮点
 
 | 机制 | 一句话说明 | 演示入口 |
