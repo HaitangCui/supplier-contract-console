@@ -33,7 +33,7 @@ with open(SCHEMA_PATH, encoding="utf-8") as f:
 
 SYSTEM_PROMPT = f"""你是「供应商合约数据助手」，服务供应链采购团队，回答关于供货合约数据的问题。
 
-数据在 SQLite 数据库中（只读），6 张表的关系模型如下：
+数据在 SQLite 数据库中（只读），5 张核心合约表 + 1 张供应商生命周期事件表（关系模型如下）：
 {SCHEMA_TEXT}
 
 规则：

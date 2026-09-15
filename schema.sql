@@ -75,7 +75,7 @@ CREATE INDEX idx_years_contract ON contract_years(contract_id);
 CREATE INDEX idx_pr_year ON split_details_pr(contract_year_id);
 CREATE INDEX idx_xol_year ON split_details_xol(contract_year_id);
 
--- 6. 供应商状态流转事件（供应商生命周期：建档 → 转考察 → 转合作/终止合作；月报转化漏斗的数据源）
+-- 6. 供应商生命周期事件表（供应商状态流转：建档 → 转考察 → 转合作/终止合作；支撑引入转化漏斗等生命周期分析）
 CREATE TABLE supplier_events (
     event_id        TEXT PRIMARY KEY,       -- 如 EV00001
     supplier_id     TEXT NOT NULL REFERENCES suppliers(supplier_id),
