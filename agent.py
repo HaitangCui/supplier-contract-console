@@ -174,7 +174,8 @@ def run_agent(question, history=None, api_key=None):
             "未配置 DEEPSEEK_API_KEY：本地请在 .streamlit/secrets.toml 中填写，"
             "云端请在 Streamlit Cloud → App Settings → Secrets 中填写"
         )
-    client = OpenAI(api_key=key, base_url="https://api.deepseek.com")
+    # timeout=60 + max_retries=0：单次调用最多 60s 即报错，避免公开部署时请求卡死无输出
+    client = OpenAI(api_key=key, base_url="https://api.deepseek.com", timeout=60, max_retries=0)
     state = {"last_df": None, "chart": None}
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]

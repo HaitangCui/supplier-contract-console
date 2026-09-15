@@ -5,10 +5,12 @@
 编辑/删除等写操作保留在 v1（app.py）人工执行（乐观锁 + 二次确认）。
 """
 
+import os
+
 import plotly.graph_objects as go
 import streamlit as st
 
-from agent import get_api_key, run_agent
+from agent import DB_PATH, get_api_key, run_agent
 
 st.set_page_config(page_title="AI Supplier Contract Assistant", page_icon="🤖", layout="wide")
 
@@ -52,6 +54,10 @@ with st.sidebar:
     st.markdown("**架构**：单 Agent + Tool Calling\n\n提问 → LLM → 只读 SQL / 画图工具 → 结果回传 → LLM 总结")
     st.markdown("**安全边界**：Agent 只有只读查询权限；编辑/删除等写操作保留在 v1 人工执行（乐观锁 + 二次确认）")
     st.markdown(f"**限流**：每个会话每天最多 {MAX_DAILY} 次提问（公开部署的成本护栏）")
+    st.divider()
+    st.subheader("🔧 运行自检")
+    st.markdown(f"- API Key：{'✅ 已配置' if bool(get_api_key()) else '❌ 未配置 → 去 App Settings → Secrets 填 DEEPSEEK_API_KEY'}")
+    st.markdown(f"- 数据库：{'✅ 正常' if os.path.exists(DB_PATH) else '❌ 找不到 console.db'}")
     st.divider()
     st.subheader("💡 试试这些问题")
     for i, ex in enumerate(EXAMPLES):
